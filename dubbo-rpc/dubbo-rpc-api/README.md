@@ -53,7 +53,7 @@
                 加载stub变量类，设置给stubClass变量
                 校验stubClass变量值必须是serviceType变量值的子类，如果不是，抛异常IllegalStateException(The stub implemention class...)
                 使用存在interfaceClass属性参数的构造方法创建实例，方法参数是proxy，返回包装后的实例设置给proxy
-                如果invoker.getUrl()的dubbo.stub.event参数等于true            // 暂时不考虑此逻辑
+                如果invoker.getUrl()的dubbo.stub.event参数等于true             // 暴漏client端服务给server端
                     根据invoker.getUrl()创建新的实例设置给url变量
                     添加dubbo.stub.event.methods和StringUtils.join(Wrapper.getWrapper(proxy.getClass()).getDeclaredMethodNames(), ",")到url变量的参数中
                     添加isserver和false到url变量的参数中
@@ -237,8 +237,8 @@
         设置inv参数中的invoker属性等于this
         如果attachment属性不等于null并且个数大于0，追到到inv参数的attachments属性中
         如果RpcContext.getContext().getAttachments()不等于null，追到到inv参数的attachments属性中
-        判断url属性的参数中inv.getMethodName() + "async"是否等于true，默认为false，如果为true，追加async和true到inv参数的attachments属性中
-        如果是异步请求(async等于true或invocationid.autoattach等于true)
+        判断url属性的参数中inv.getMethodName() + ".async"是否等于true，默认为false，如果为true，追加async和true到inv参数的attachments属性中
+        如果是异步请求(url参数中inv.getMethodName() + ".invocationid.autoattach"等于true或attachments属性中async等于true或url参数中inv.getMethodName() + ".async"等于true或)
             如果inv参数的attachments属性中不存在id，追加id和全局自增id到inv参数的attachments属性中
         返回doInvoke(invocation)，如果产生InvocationTargetException，返回new ResultSet(e)，如果产生RpcException，判断是否是业务产生的，如果是返回new ResultSet(e)，否则抛上去，如果是其他异常，返回new RpcResult(e)
     public void destroy()
@@ -1181,6 +1181,10 @@
 # com.alibaba.dubbo.remoting.telnet.TelnetHandler
 
 # com.alibaba.dubbo.common.status.StatusChecker
+
+# com.alibaba.dubbo.rpc.protocol.dubbo.CallbackServiceCodec
+
+# com.alibaba.dubbo.rpc.protocol.dubbo.filter.FutureFilter
 
 # 其他
 * 自适应

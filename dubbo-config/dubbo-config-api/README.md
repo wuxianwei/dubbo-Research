@@ -664,17 +664,17 @@
         如果methods属性不等于null且个数大于0，进行遍历
             将methodConfig变量中，获取标注了@Parameter注解的getter方法进行遍历，添加其field和value到map变量中（key使用methodConfigName.field）
             如果map变量中包含methodConfigName.retry指定key，移除指定key，如果对应的value等于false，添加methodConfigName.retries和0到map变量中
-            将methodConfig变量中，获取标注了@Parameter注解的getter方法进行遍历，如果注解的attribute()方法返回true，添加其field和value到map变量中（key使用methodConfigName.field）
+            将methodConfig变量中，获取标注了@Parameter注解的getter方法进行遍历，如果注解的attribute()方法返回true，添加其field和value到attribute变量中（key使用methodConfigName.field）
             如果methodConfig.isReturn()等于false并且（methodConfig.getOnreturn()不等于null或者methodConfig.getOnthrow()不等于null），抛异常IllegalStateException(method config error : return attribute must be set true when onreturn or onthrow has been setted.)
-            使用serviceKey、method.getName()、onreturn.method生成onReturnMethodKey变量，获取attribute中onReturnMethodKey变量的value值
+            使用serviceKey、methodConfigName、"onreturn.method"字符串生成onReturnMethodKey变量，获取attribute中onReturnMethodKey变量的value值
             如果onReturnMethodKey变量的value值不等于null并且是String类型
-                添加onReturnMethodKey变量和method.getOnreturn().getClass()中onReturnMethodKey变量value值对应的Method实例到attributes变量中
-            使用serviceKey、method.getName()、onthrow.method生成onThrowMethodKey变量，获取attribute中onThrowMethodKey变量的value值
+                添加onReturnMethodKey变量和methodConfig.getOnreturn().getClass()中onReturnMethodKey变量值对应的Method实例到attributes变量中
+            使用serviceKey、methodConfigName、"onthrow.method"字符串生成onThrowMethodKey变量，获取attribute中onThrowMethodKey变量的value值
             如果onThrowMethodKey变量的value值不等于null并且是String类型
-                添加onThrowMethodKey变量和method.getOnthrow().getClass()中onThrowMethodKey变量value值对应的Method实例到attributes变量中
-            使用serviceKey、method.getName()、oninvoke.method生成onInvokeMethodKey变量，获取attribute中onInvokeMethodKey变量的value值
-                如果onInvokeMethodKey变量的value值不等于null并且是String类型
-                    添加onInvokeMethodKey变量和method.getOninvoke().getClass()中onInvokeMethodKey变量value值对应的Method实例到attributes变量中
+                添加onThrowMethodKey变量和methodConfig.getOnthrow().getClass()中onThrowMethodKey变量值对应的Method实例到attributes变量中
+            使用serviceKey、methodConfigName、"oninvoke.method"字符串生成onInvokeMethodKey变量，获取attribute中onInvokeMethodKey变量的value值
+                如果onInvokeMethodKey变量值不等于null并且是String类型
+                    添加onInvokeMethodKey变量和methodConfig.getOninvoke().getClass()中onInvokeMethodKey变量值对应的Method实例到attributes变量中
         执行StaticContext.getSystemContext().putAll(attributes)       // 进程级别的ConcurrentHashMap
         设置ref属性等于createProxy(map)
     private T createProxy(Map<String, String> map)
@@ -747,7 +747,7 @@
             如果check属性等于null，设置check属性等于consumer.isCheck()
             如果check属性等于null
                 设置check属性等于true
-            如果check属性等于null，调用invoker.isAvailable()判断是否可用，如果为false，抛异常IllegalStateException(Failed to check the status of the service...)
+            如果check属性等于true，调用invoker.isAvailable()判断是否可用，如果为false，抛异常IllegalStateException(Failed to check the status of the service...)
             返回ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension().getProxy(invoker)
     protected List<URL> loadRegistries(boolean provider)
         如果registries属性等于null或者个数等于0
