@@ -1077,7 +1077,11 @@
                 创建path节点，设置为临时节点
                 执行addChildListener(path, zkListener)，返回所有path下面所有子节点，如果子节点不等于null，执行toUrlsWithEmpty(url, path, children)添加到urls变量中
             执行notify(url, listener, urls)
-        如果订阅失败，添加url和listener到failedSubscribed中
+        如果以上逻辑执行失败
+            遍历properties属性，获取url.serviceKey对应的URL列表，设置给urls变量
+            如果urls变量不等于null并且元素个数大于0
+                执行notify(url, listener, urls)
+            添加url和listener到failedSubscribed中
     private List<URL> toUrlsWithEmpty(URL subscribe, String path, List<String> childNodes)          // 过滤 + 处理元素空场景添加空协议
         遍历childNodes，处理成URL，调用UrlUtils.isMatch(subscribe, url)，如果为true，加入url到urls中
         如果urls等于null或者个数等于0
