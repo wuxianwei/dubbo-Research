@@ -198,3 +198,33 @@
 
 * com.alibaba.dubbo.remoting.telnet.TelnetHandler（未）
 * com.alibaba.dubbo.common.status.StatusChecker（未）
+
+# 简述
+
+    支持多协议和多注册中心
+    内部对象的生命周期及各个组件之间的交互主要通过ExtensionLoader + URL完成（包括自适应扩展）
+    通过Spring的Handler解析配置成BeanDefinition，添加到Spring的上下文的Register中，主要的逻辑是set相关属性和进行配置校验
+    对provider暴漏的服务（不包含范化引用），会使用javassist实现反射机制（分析类方法字段信息，最终提供invokerMethod方法，内部使用if else机制进行直接调用）代替java的动态代理
+    provider的启动流程（dubbo协议、zk注册中心、指定服务场景）
+        启动nettyserver
+            接收客户端请求并解序列化为Response对象并传递给业务线程，执行ProxyFactory创建的ProxyInvoker对象
+                对于oneway的请求方式，不需要返回值，所以直接不需要等待服务方法执行业务方法完毕
+                对于twoway请求，在业务线程中，需要等待服务方法执行完毕然后写入到对方的Channel中
+            接收心跳事件，保持长连接
+        注册到zk
+            注册当前服务方法信息到providers节点下，主要包括ip、port、interface、methods、version、group相关信息
+            对configuration节点添加监听事件，用于实现动态配置，注册到providers节点下的服务是baseUrl，后续的每次改变，会整合configuration下的一类信息，根据协议override/absent整合baseUrl实现动态配置变更
+        注册到zk和追加到nettyserver中，都是通过在Protocol中，通过ExtensionLoader提供的Wrapper机制，解析一个Url完成
+        默认情况还会暴漏一个injvm协议，就是将可调用对象加入到一个进程级别的map属性中，这样，如果是相同进程内的consumer调用，不走RPC方式
+    consumer的启动流程
+        注册到zk
+            注册当前信息到consumers节点下，主要包括ip、port、interface、methods、version、group相关信息
+            对route、providers、configuration节点添加监听事件，实现路由转发和动态provider
+        对每个provider调用封装为一个的Invoker，对一组Invoker封装为Cluster，提供failfast、failover机制
+        对远程的Invoker创建nettyclient
+            发送心跳事件，保持长连接
+            超时参数provider可以提供，不过是提供给consumer的默认参数，provider本身无超时逻辑验证
+            consumer整合timeout参数，每次调用的时候，对调用信息处理成Request参数，并生成一个requestId，然后创建一个Future实例，并加入到map属性中，序列化Request对象并写入到provider的Channel中，然后后台启动一个线程，定时扫描所有map元素，进行超时检测
+        同步等待方式就是依赖Future.get逻辑，因此提供了超时重试机制，对于异步调用，超时重试机制不起作用
+        Callback的实现机制是，将consumer端的callback注册成provider（非服务），然后provider执行完逻辑后，在调用consumer的callback完成，是通过两次RPC完成的请求
+        mock和injvm，都是Invoker的一种实现
